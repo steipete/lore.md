@@ -10,3 +10,7 @@ bindings = [
 [[migrations]]
 tag = "v1"
 new_classes = ["DomainDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["DomainDO"]
