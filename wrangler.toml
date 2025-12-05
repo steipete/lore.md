@@ -2,7 +2,7 @@ name = "lore-md"
 main = "src/worker.js"
 compatibility_date = "2025-12-04"
 account_id = "de09342a728de2c25c85cc6b34d68739"
-workers_dev = false
+workers_dev = true
 
 [durable_objects]
 bindings = [
