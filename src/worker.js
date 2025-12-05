@@ -220,14 +220,14 @@ async function callXaiStream(env, prompt, onChunk) {
 
 function buildPrompt(host, today) {
   return `Write a reflective Markdown piece (220-400 words) for the site "${host}".
-Theme: derive meaning, metaphor, or philosophy from the domain name itself.
-Tone: contemplative, clear, modern; avoid clichés.
+Theme: find a simple, thoughtful meaning, metaphor, or philosophy inspired by the domain name.
+Tone: calm, sincere, meaningful; avoid jargon and clichés; use clear, everyday language.
 Structure:
 - Start with a single H1 title.
 - 2-3 short sections with H2 headings.
 - At most one bullet list.
 - No images, links, HTML, or code fences.
-Constraints: keep it under ~750 words, English only.
+Constraints: keep it under ~400 words, English only.
 Add a one-line italicized closing thought. Date context: ${today} UTC.`;
 }
 
