@@ -344,6 +344,7 @@ footer {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 footer a {
   color: inherit;
@@ -355,6 +356,7 @@ footer a {
 }
 em { font-style: italic; }
 strong { font-weight: 700; }
+footer span, footer a { white-space: nowrap; }
 @media (max-width: 520px) {
   footer { flex-direction: column; align-items: flex-start; }
 }
