@@ -246,8 +246,6 @@ async function streamGenerate(host, today, version, env, stub, ctx) {
   const ts = new TransformStream();
   const writer = ts.writable.getWriter();
   const encoder = new TextEncoder();
-  const header = renderHead(host);
-  const footer = renderFooter(today);
 
   const response = new Response(ts.readable, {
     headers: {
@@ -260,15 +258,16 @@ async function streamGenerate(host, today, version, env, stub, ctx) {
   ctx.waitUntil(
     (async () => {
       let collected = "";
-      const write = async (chunk) => {
+      const collect = async (chunk) => {
         collected += chunk;
-        await writer.write(encoder.encode(chunk));
       };
 
       try {
-        await writer.write(encoder.encode(header));
-        await callXaiStream(env, prompt, write);
-        await writer.write(encoder.encode(footer));
+        await callXaiStream(env, prompt, collect);
+
+        const rendered = renderMarkdown(collected.trim());
+        const body = `${renderHead(host)}${rendered}${renderFooter(today)}`;
+        await writer.write(encoder.encode(body));
 
         if (collected.trim().length && stub) {
           await stub.fetch("https://domain-do/store", {
@@ -283,7 +282,7 @@ async function streamGenerate(host, today, version, env, stub, ctx) {
         }
 
         if (collected.trim().length) {
-          const html = wrapShell(host, collected, today);
+          const html = wrapShell(host, renderMarkdown(collected.trim()), today);
           const cacheKey = new Request(`https://${host}/${version}/__md/${today}`);
           const cachedResponse = new Response(html, {
             headers: {
