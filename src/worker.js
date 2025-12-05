@@ -113,7 +113,7 @@ async function callXai(env, prompt) {
     env.GATEWAY_BASE ||
     "https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY_ID/compat";
   const body = {
-    model: "xai/grok-4.1-fast-non-reasoning",
+    model: "grok-4-1-fast-non-reasoning",
     messages: [
       {
         role: "system",
