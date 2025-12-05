@@ -11,7 +11,7 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    const version = "v9";
+    const version = "v10";
 
   const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",
