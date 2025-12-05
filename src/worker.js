@@ -21,6 +21,11 @@ export default {
     const cached = await caches.default.match(cacheKey);
     if (cached) return cached;
 
+    // 1b) Stream path: if client asks for streaming and no cache, stream generation.
+    if (url.pathname.endsWith("/stream")) {
+      return streamGenerate(host, today, version, env);
+    }
+
     // 2) Ask Durable Object for today's text (generates on first hit).
     const stub = env.DOMAIN_DO.get(env.DOMAIN_DO.idFromName(host));
     const doRes = await stub.fetch("https://domain-do/internal", {
@@ -151,6 +156,73 @@ async function callXai(env, prompt) {
   return text;
 }
 
+async function callXaiStream(env, prompt, onChunk) {
+  if (!env.XAI_API_KEY) {
+    throw new Error("XAI_API_KEY is not set");
+  }
+  const apiBase =
+    env.GATEWAY_BASE ||
+    "https://gateway.ai.cloudflare.com/v1/ACCOUNT_ID/GATEWAY_ID/compat";
+  const body = {
+    model: "grok-4-1-fast-reasoning",
+    messages: [
+      {
+        role: "system",
+        content:
+          "You write concise, thoughtful Markdown essays. No HTML. No images. Do not mention the prompt itself.",
+      },
+      { role: "user", content: prompt },
+    ],
+    temperature: 0.6,
+    top_p: 0.9,
+    max_tokens: 500,
+    stream: true,
+  };
+
+  const res = await fetch(`${apiBase}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${env.GATEWAY_TOKEN || env.XAI_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok || !res.body) {
+    const msg = await safeText(res);
+    throw new Error(`xAI stream error ${res.status}: ${msg}`);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const parts = buffer.split("\n\n");
+    buffer = parts.pop() || "";
+    for (const part of parts) {
+      if (!part.startsWith("data:")) continue;
+      const data = part.slice(5).trim();
+      if (data === "[DONE]") {
+        return;
+      }
+      try {
+        const json = JSON.parse(data);
+        const delta =
+          json?.choices?.[0]?.delta?.content ||
+          json?.choices?.[0]?.message?.content ||
+          "";
+        if (delta) await onChunk(delta);
+      } catch (e) {
+        console.error("stream parse error", e);
+      }
+    }
+  }
+}
+
 function buildPrompt(host, today) {
   return `Write a reflective Markdown piece (220-400 words) for the site "${host}".
 Theme: derive meaning, metaphor, or philosophy from the domain name itself.
@@ -174,8 +246,64 @@ Until it wakes, take this small reminder: meaning often shows up after the first
 _Generated on ${today} UTC; cached until the next sunrise._`;
 }
 
+async function streamGenerate(host, today, version, env) {
+  const prompt = buildPrompt(host, today);
+  const ts = new TransformStream();
+  const writer = ts.writable.getWriter();
+  const encoder = new TextEncoder();
+  const header = renderHead(host);
+  const footer = renderFooter(today);
+
+  let collected = "";
+  const write = async (chunk) => {
+    collected += chunk;
+    await writer.write(encoder.encode(chunk));
+  };
+
+  try {
+    // write shell pre + opening <pre>
+    await writer.write(encoder.encode(header));
+    await callXaiStream(env, prompt, write);
+    await writer.write(encoder.encode(footer));
+  } catch (err) {
+    console.error("stream error", err);
+  } finally {
+    await writer.close();
+  }
+
+  // cache full page after stream completes (if we got anything)
+  if (collected.trim().length) {
+    const html = wrapShell(host, collected, today);
+    const response = new Response(html, {
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=86400, stale-while-revalidate=3600",
+        etag: `${host}:${version}:${today}`,
+        "x-generated-on": today,
+        "x-md-version": version,
+      },
+    });
+    await caches.default.put(
+      new Request(`https://${host}/${version}/__md/${today}`),
+      response
+    );
+  }
+
+  return new Response(ts.readable, {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "transfer-encoding": "chunked",
+      "x-md-version": version,
+    },
+  });
+}
+
 function renderPage({ host, text, generatedAt }) {
   const escapedText = escapeHtml(text);
+  return wrapShell(host, escapedText, generatedAt);
+}
+
+function wrapShell(host, escapedText, generatedAt) {
   const css = `
 :root { color-scheme: light dark; }
 body {
@@ -256,4 +384,67 @@ async function safeText(res) {
   } catch {
     return "<no-body>";
   }
+}
+
+function renderHead(host) {
+  const css = `
+:root { color-scheme: light dark; }
+body {
+  font: 16px/1.6 "IBM Plex Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  max-width: 72ch;
+  margin: 8vh auto 10vh;
+  padding: 0 1.5rem;
+  background: var(--bg, #f8f8f5);
+  color: var(--fg, #111);
+  -webkit-font-smoothing: antialiased;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0c0c0c; --fg: #e6e6e6; }
+}
+@media (prefers-color-scheme: light) {
+  :root { --bg: #f8f8f5; --fg: #111; }
+}
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+footer {
+  margin-top: 2.5rem;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  opacity: 0.7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+footer a {
+  color: inherit;
+  text-decoration: none;
+}
+@media (max-width: 520px) {
+  footer { flex-direction: column; align-items: flex-start; }
+}
+`;
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(host)}</title>
+  <style>${css}</style>
+</head>
+<body>
+  <pre>`;
+}
+
+function renderFooter(generatedAt) {
+  return `</pre>
+  <footer>
+    <span>Generated on ${generatedAt} UTC</span>
+    <a href="https://steipete.me" target="_blank" rel="noopener">a @steipete project</a>
+  </footer>
+</body>
+</html>`;
 }
