@@ -210,7 +210,7 @@ footer {
 }
 footer a {
   color: inherit;
-  text-decoration: underline;
+  text-decoration: none;
 }
 @media (max-width: 520px) {
   footer { flex-direction: column; align-items: flex-start; }
