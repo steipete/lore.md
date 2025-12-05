@@ -123,7 +123,7 @@ async function callXai(env, prompt) {
       {
         role: "system",
         content:
-          "You write concise, thoughtful Markdown essays. No HTML. No images. Do not mention the prompt itself.",
+          "You write concise, thoughtful Markdown essays. Do not mention Markdown or formatting itself. No HTML. No images. Do not mention the prompt.",
       },
       { role: "user", content: prompt },
     ],
