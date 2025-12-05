@@ -13,7 +13,7 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    const version = "v12";
+    const version = "v13";
 
   const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",
@@ -343,7 +343,7 @@ footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 footer a {
@@ -357,7 +357,7 @@ footer a {
 em { font-style: italic; }
 strong { font-weight: 700; }
 footer span, footer a { white-space: nowrap; }
-@media (max-width: 520px) {
+@media (max-width: 340px) {
   footer { flex-direction: column; align-items: flex-start; }
 }
 }`;
