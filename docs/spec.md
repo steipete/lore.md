@@ -47,6 +47,9 @@ Deployment steps
 - `wrangler deploy`; map domains/routes in Cloudflare.
 - First hit per domain per UTC day triggers generation; edge cache serves the rest.
 
+CI
+- `.github/workflows/ci.yml` runs `wrangler deploy --dry-run`; requires GitHub secrets `CLOUDFLARE_API_TOKEN`, `XAI_API_KEY`, optional `GATEWAY_TOKEN`, and `GATEWAY_BASE`.
+
 Extensions (optional)
 - Add KV read-through if traffic is heavy multi-region.
 - Add scheduled cron prefill for known hostnames to eliminate cold start.

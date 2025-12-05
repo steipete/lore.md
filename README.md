@@ -32,3 +32,4 @@ Config references
 - `src/worker.js`: worker logic, DO class, Gateway call.
 - `wrangler.toml`: DO binding `DOMAIN_DO`, entrypoint, migration tag.
 - `docs/spec.md`: deeper architecture and ops notes.
+- CI: `.github/workflows/ci.yml` runs `wrangler deploy --dry-run` (needs GitHub secrets: `CLOUDFLARE_API_TOKEN`, `XAI_API_KEY`, and `GATEWAY_BASE`; optional `GATEWAY_TOKEN`).

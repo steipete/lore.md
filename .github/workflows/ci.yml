@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Wrangler
+        run: npm install -g wrangler@4
+
+      - name: Dry-run deploy (bundle validation)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          GATEWAY_BASE: ${{ secrets.GATEWAY_BASE }}
+          GATEWAY_TOKEN: ${{ secrets.GATEWAY_TOKEN }}
+        run: wrangler deploy --dry-run
