@@ -11,7 +11,7 @@ export default {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    const version = "v7";
+    const version = "v8";
 
     const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",
@@ -21,41 +21,34 @@ export default {
     const cached = await caches.default.match(cacheKey);
     if (cached) return cached;
 
-    // 1b) Stream path: if client asks for streaming and no cache, stream generation.
-    if (url.pathname.endsWith("/stream")) {
-      return streamGenerate(host, today, version, env);
-    }
-
-    // 2) Ask Durable Object for today's text (generates on first hit).
+    // 1b) Ask DO for today's text; if present, render and cache.
     const stub = env.DOMAIN_DO.get(env.DOMAIN_DO.idFromName(host));
     const doRes = await stub.fetch("https://domain-do/internal", {
       headers: { host, "x-md-version": version },
     });
-    if (!doRes.ok) {
-      return new Response("Upstream generation failed", { status: 502 });
+    if (doRes.ok) {
+      /** @type {{ text: string, generatedAt: string }} */
+      const payload = await doRes.json();
+      const html = renderPage({
+        host,
+        text: payload.text,
+        generatedAt: payload.generatedAt,
+      });
+      const response = new Response(html, {
+        headers: {
+          "content-type": "text/html; charset=utf-8",
+          "cache-control": "public, max-age=86400, stale-while-revalidate=3600",
+          etag: `${host}:${version}:${payload.generatedAt}`,
+          "x-generated-on": payload.generatedAt,
+          "x-md-version": version,
+        },
+      });
+      ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
+      return response;
     }
-    /** @type {{ text: string, generatedAt: string }} */
-    const payload = await doRes.json();
 
-    const html = renderPage({
-      host,
-      text: payload.text,
-      generatedAt: payload.generatedAt,
-    });
-
-    const response = new Response(html, {
-      headers: {
-        "content-type": "text/html; charset=utf-8",
-        "cache-control": "public, max-age=86400, stale-while-revalidate=3600",
-        etag: `${host}:${version}:${payload.generatedAt}`,
-        "x-generated-on": payload.generatedAt,
-        "x-md-version": version,
-      },
-    });
-
-    // 3) Populate edge cache asynchronously.
-    ctx.waitUntil(caches.default.put(cacheKey, response.clone()));
-    return response;
+    // 2) Stream generation (default on cache miss); caches after completion.
+    return streamGenerate(host, today, version, env, stub);
   },
 };
 
@@ -79,22 +72,24 @@ export class DomainDO {
     const version = request.headers.get("x-md-version") || "v1";
     const key = `${version}-${today}`;
 
-    // Serialize concurrent requests for same DO instance.
-    return await this.state.blockConcurrencyWhile(async () => {
-      const existing = await this.state.storage.get(key);
-      if (existing) {
-        return json(existing);
-      }
-
-      const text = await generateDailyText(this.env, host, today);
-      const record = { text, generatedAt: today };
-
-      await this.state.storage.put(key, record, {
-        expirationTtl: 60 * 60 * 27, // ~27h to cover clock skew.
+    if (request.method === "POST" && url.pathname === "/store") {
+      const body = await request.json();
+      const record = {
+        text: body.text,
+        generatedAt: body.generatedAt || today,
+      };
+      await this.state.blockConcurrencyWhile(async () => {
+        await this.state.storage.put(key, record, {
+          expirationTtl: 60 * 60 * 27,
+        });
       });
+      return json({ stored: true });
+    }
 
-      return json(record);
-    });
+    // GET internal: return if exists, else 404
+    const existing = await this.state.storage.get(key);
+    if (existing) return json(existing);
+    return new Response("not found", { status: 404 });
   }
 }
 
@@ -246,7 +241,7 @@ Until it wakes, take this small reminder: meaning often shows up after the first
 _Generated on ${today} UTC; cached until the next sunrise._`;
 }
 
-async function streamGenerate(host, today, version, env) {
+async function streamGenerate(host, today, version, env, stub) {
   const prompt = buildPrompt(host, today);
   const ts = new TransformStream();
   const writer = ts.writable.getWriter();
@@ -265,6 +260,18 @@ async function streamGenerate(host, today, version, env) {
     await writer.write(encoder.encode(header));
     await callXaiStream(env, prompt, write);
     await writer.write(encoder.encode(footer));
+    // Persist to DO for the rest of the day
+    if (collected.trim().length && stub) {
+      await stub.fetch("https://domain-do/store", {
+        method: "POST",
+        headers: {
+          host,
+          "content-type": "application/json",
+          "x-md-version": version,
+        },
+        body: JSON.stringify({ text: collected, generatedAt: today }),
+      });
+    }
   } catch (err) {
     console.error("stream error", err);
   } finally {
@@ -283,10 +290,8 @@ async function streamGenerate(host, today, version, env) {
         "x-md-version": version,
       },
     });
-    await caches.default.put(
-      new Request(`https://${host}/${version}/__md/${today}`),
-      response
-    );
+    const cacheKey = new Request(`https://${host}/${version}/__md/${today}`);
+    await caches.default.put(cacheKey, response);
   }
 
   return new Response(ts.readable, {
