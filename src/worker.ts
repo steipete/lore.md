@@ -367,6 +367,12 @@ footer span, footer a { white-space: nowrap; }
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="${escapeHtml(host)}" />
+  <meta property="og:description" content="One daily markdown page: ${escapeHtml(host)}" />
+  <meta property="og:url" content="https://${escapeHtml(host)}" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23000'%3E%3C/rect%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-size='36' font-family='monospace' fill='%23fff'%3Emd%3C/text%3E%3C/svg%3E" />
   <title>${escapeHtml(host)}</title>
   <style>${css}</style>
 </head>
