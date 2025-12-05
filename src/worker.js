@@ -52,6 +52,9 @@ export default {
   },
 };
 
+// Export helpers for testing.
+export { buildPrompt, fallbackText, renderPage };
+
 export class DomainDO {
   /**
    * @param {DurableObjectState} state
