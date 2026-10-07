@@ -2,6 +2,7 @@
 
 ## 0.2.1 — Unreleased
 
+- Update Wrangler's pinned Miniflare dependencies to fix vulnerable sharp and undici versions that blocked Dependabot security updates; refresh development tooling and check dependencies and Node 22.13 compatibility in credential-free CI.
 - Refresh Wrangler, Workers types, formatting/lint tooling, and pnpm while retaining the Node 22.13 minimum.
 - Pin daily essay generation to xAI `grok-4.20-0309-non-reasoning` and refresh the cache namespace so the new model produces a distinct daily record.
 

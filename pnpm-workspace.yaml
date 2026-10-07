@@ -2,3 +2,7 @@ allowBuilds:
   esbuild: true
   sharp: true
   workerd: true
+
+overrides:
+  # Miniflare still pins 0.35.4; 0.35.5 fixes its bundled librsvg vulnerability.
+  miniflare>sharp@0.35.4: 0.35.5

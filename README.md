@@ -34,6 +34,8 @@ Behavior
 
 Testing
 
+- Use Node 22.13 or newer and install the pnpm version pinned in `package.json` with `npm install --global pnpm@11.28.4`. Then run `pnpm install --frozen-lockfile` and `pnpm check` for formatting, types, lint, and unit tests. Installing pnpm directly avoids the outdated Corepack signing keys bundled with older Node releases.
+- Run `pnpm audit --audit-level=high` to check dependency advisories and `pnpm exec wrangler deploy --dry-run` to validate the Worker bundle without credentials or a deployment.
 - `wrangler dev` then curl twice: `curl -H "Host: yourdomain.test" http://127.0.0.1:8787` and confirm `X-Generated-On` stays fixed.
 - Check AI Gateway analytics to verify only one upstream call per domain per day.
 - Stream path test: `curl -N http://127.0.0.1:8787/stream` on a fresh day to observe live output.
@@ -43,4 +45,4 @@ Config references
 - `src/worker.ts`: worker logic, DO class, Gateway call.
 - `wrangler.toml`: DO binding `DOMAIN_DO`, entrypoint, migration tag.
 - `docs/spec.md`: deeper architecture and ops notes.
-- CI: `.github/workflows/ci.yml` runs `wrangler deploy --dry-run` (needs GitHub secrets: `CLOUDFLARE_API_TOKEN`, `XAI_API_KEY`, and `GATEWAY_BASE`; optional `GATEWAY_TOKEN`).
+- CI: `.github/workflows/ci.yml` checks the minimum Node 22.13 runtime and the latest Node 22 release, audits dependencies, and validates the bundle with `wrangler deploy --dry-run`. CI does not require deployment or AI credentials.
