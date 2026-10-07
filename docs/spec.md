@@ -63,7 +63,7 @@ Deployment steps
 
 CI
 
-- `.github/workflows/ci.yml` runs `wrangler deploy --dry-run`; requires GitHub secrets `CLOUDFLARE_API_TOKEN`, `XAI_API_KEY`, optional `GATEWAY_TOKEN`, and `GATEWAY_BASE`.
+- `.github/workflows/ci.yml` runs `pnpm check`, `pnpm audit --audit-level=high`, and `pnpm exec wrangler deploy --dry-run` on Node 22.13 and the latest Node 22 release. Bundle validation is local and requires no deployment or AI credentials.
 
 Extensions (optional)
 
