@@ -46,3 +46,7 @@ Config references
 - `wrangler.toml`: DO binding `DOMAIN_DO`, entrypoint, migration tag.
 - `docs/spec.md`: deeper architecture and ops notes.
 - CI: `.github/workflows/ci.yml` checks the minimum Node 22.13 runtime and the latest Node 22 release, audits dependencies, and validates the bundle with `wrangler deploy --dry-run`. CI does not require deployment or AI credentials.
+
+## Releases
+
+See [RELEASING.md](RELEASING.md) for the signed-tag GitHub release workflow and its no-publish rehearsal.
