@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Upgrade daily essays to xAI Grok 4.7 with low reasoning effort and a fresh cache namespace for normal and streaming requests.
+
 ## 0.3.0 — 2026-10-16
 
 **Highlights:** Daily essays now use Grok 4.20 with a fresh cache namespace; dependency updates fix sharp and undici security vulnerabilities.
