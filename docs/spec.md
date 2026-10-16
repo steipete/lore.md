@@ -37,7 +37,7 @@ Prompt (summary)
 
 Failure mode
 
-- On AI error, empty output, malformed/truncated SSE, or timeout, deterministic fallback markdown is stored as the daily record. A partially delivered live stream is marked interrupted and never edge-cached. Worker-local fallback for a failed DO request is `no-store`, avoiding divergence from a generation that may still finish inside the DO.
+- Both generation paths allow 60 seconds, including model reasoning and response delivery. On AI error, empty output, malformed/truncated SSE, or timeout, deterministic fallback markdown is stored as the daily record. A partially delivered live stream is marked interrupted and never edge-cached. Worker-local fallback for a failed DO request is `no-store`, avoiding divergence from a generation that may still finish inside the DO.
 
 Styling
 

@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Upgrade daily essays to xAI Grok 4.7 with low reasoning effort and a fresh cache namespace for normal and streaming requests.
+- Allow 60 seconds for Grok's reasoning and response delivery so slower generations do not become cached fallback pages.
 
 ## 0.3.0 — 2026-10-16
 

@@ -29,6 +29,7 @@ Behavior
 - Edge cache keyed per host/version/day; headers: `ETag` = `host:version:date`, `X-Generated-On` = date.
 - Prompt: philosophical, host-aware, ~220–400 words, H1 + H2 sections, optional single bullet list, italic closing line.
 - Normal and streaming requests use `reasoning_effort: "low"`, `temperature: 0.6`, `top_p: 0.9`, and `max_tokens: 500`. Cloudflare's `/compat` model ID is `grok/grok-4.7`.
+- Both generation paths allow up to 60 seconds for the model response, including reasoning time.
 - Fallback text is deterministic if the AI call fails, and is stored for that host/day.
 - Footer shows generation date and a right-aligned link “a @steipete project” → https://steipete.me.
 - Streaming: request `/stream` to stream the first uncached generation live through the Durable Object. Concurrent `/` or `/stream` misses wait on the same in-flight generation, so streaming cannot bypass the one-generation-per-day guard. Live responses are not edge-cached; the next normal request caches the completed DO record. Interrupted streams store deterministic fallback text, never partial output, as the daily record.
