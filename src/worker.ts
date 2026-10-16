@@ -23,13 +23,15 @@ type XaiChatCompletion = {
 };
 
 const XAI_MODEL = "grok-4.7";
+// Low reasoning can still take longer than 25 seconds before returning an essay.
+const XAI_TIMEOUT_MS = 60_000;
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const host = request.headers.get("host") || url.host || "localhost";
     const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC
-    const version = "v18";
+    const version = "v19";
 
     const cacheKey = new Request(`https://${host}/${version}/__md/${today}`, {
       method: "GET",
@@ -331,7 +333,7 @@ async function callXai(env: Env, prompt: string): Promise<string> {
   };
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25_000);
+  const timeout = setTimeout(() => controller.abort(), XAI_TIMEOUT_MS);
   try {
     const res = await fetch(`${apiBase}/chat/completions`, {
       method: "POST",
@@ -382,7 +384,7 @@ async function callXaiStream(
   };
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25_000);
+  const timeout = setTimeout(() => controller.abort(), XAI_TIMEOUT_MS);
   try {
     const res = await fetch(`${apiBase}/chat/completions`, {
       method: "POST",

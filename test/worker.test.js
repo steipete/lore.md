@@ -90,6 +90,39 @@ describe("DomainDO daily generation", () => {
     vi.useRealTimers();
   });
 
+  it.each(["/daily", "/stream"])("allows a slow model response on %s", async (path) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url, { signal }) =>
+          new Promise((resolve, reject) => {
+            const timer = setTimeout(() => {
+              resolve(
+                path === "/stream"
+                  ? new Response(
+                      makeSseStream([{ choices: [{ delta: { content: "# Slow daily page" } }] }]),
+                    )
+                  : Response.json({ choices: [{ message: { content: "# Slow daily page" } }] }),
+              );
+            }, 30_000);
+            signal.addEventListener("abort", () => {
+              clearTimeout(timer);
+              reject(new Error("provider request aborted"));
+            });
+          }),
+      ),
+    );
+    const domainDO = new DomainDO(createState(), { XAI_API_KEY: "xai-key" });
+    const result = domainDO
+      .fetch(new Request(`https://domain-do${path}`))
+      .then((response) => response.text());
+
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(await result).toContain("# Slow daily page");
+    expect(await result).not.toContain("generator blinked");
+  });
+
   it("coalesces concurrent misses into one upstream generation", async () => {
     const fetchMock = vi.fn(async () => {
       await Promise.resolve();
@@ -361,12 +394,12 @@ describe("DomainDO daily generation", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
     const previous = { text: "# Previous model page", generatedAt: "2025-12-05" };
-    const state = createState([["v17-daily", previous]]);
+    const state = createState([["v18-daily", previous]]);
     const domainDO = new DomainDO(state, { XAI_API_KEY: "xai-key" });
 
     const response = await domainDO.fetch(
       new Request("https://domain-do/daily", {
-        headers: { "x-md-host": "example.com", "x-md-version": "v18" },
+        headers: { "x-md-host": "example.com", "x-md-version": "v19" },
       }),
     );
 
@@ -376,8 +409,8 @@ describe("DomainDO daily generation", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect([...state.values.entries()]).toEqual([
-      ["v17-daily", previous],
-      ["v18-daily", { text: "# New model page", generatedAt: "2025-12-05" }],
+      ["v18-daily", previous],
+      ["v19-daily", { text: "# New model page", generatedAt: "2025-12-05" }],
     ]);
   });
 });
@@ -411,10 +444,10 @@ describe("worker fetch", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toContain("# Daily page");
     expect(doFetch).toHaveBeenCalledWith("https://domain-do/daily", {
-      headers: { "x-md-host": "example.com", "x-md-version": "v18" },
+      headers: { "x-md-host": "example.com", "x-md-version": "v19" },
     });
     expect(cache.put).toHaveBeenCalledTimes(1);
-    expect(response.headers.get("x-md-version")).toBe("v18");
+    expect(response.headers.get("x-md-version")).toBe("v19");
     expect(response.headers.get("x-generated-on")).toBe("2025-12-05");
   });
 
@@ -434,7 +467,7 @@ describe("worker fetch", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toContain("# Live page");
     expect(doFetch).toHaveBeenCalledWith("https://domain-do/stream", {
-      headers: { "x-md-host": "example.com", "x-md-version": "v18" },
+      headers: { "x-md-host": "example.com", "x-md-version": "v19" },
     });
     expect(cache.put).not.toHaveBeenCalled();
   });
