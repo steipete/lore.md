@@ -1,11 +1,15 @@
 # Changelog
 
-## 0.2.1 — Unreleased
+## Unreleased
 
+## 0.3.0 — 2026-10-16
+
+**Highlights:** Daily essays now use Grok 4.20 with a fresh cache namespace; dependency updates fix sharp and undici security vulnerabilities.
+
+- Pin daily essay generation to xAI `grok-4.20-0309-non-reasoning` and refresh the cache namespace so the new model produces a distinct daily record.
 - Refresh development dependencies, remove the obsolete sharp override now that Miniflare pins the patched version, and schedule grouped weekly Dependabot patch/minor updates.
 - Update Wrangler's pinned Miniflare dependencies to fix vulnerable sharp and undici versions that blocked Dependabot security updates; refresh development tooling and check dependencies and Node 22.13 compatibility in credential-free CI.
 - Refresh Wrangler, Workers types, formatting/lint tooling, and pnpm while retaining the Node 22.13 minimum.
-- Pin daily essay generation to xAI `grok-4.20-0309-non-reasoning` and refresh the cache namespace so the new model produces a distinct daily record.
 
 ## 0.2.0 — 2026-07-02
 
