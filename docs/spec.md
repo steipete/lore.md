@@ -1,6 +1,6 @@
 # lore.md — Daily Markdown Per Domain (AI Gateway + xAI)
 
-Last updated: 2026-07-02 (pinned Grok 4.20 non-reasoning model, DO-coordinated daily generation with streaming)
+Last updated: 2026-10-16 (Grok 4.7 with low reasoning, DO-coordinated daily generation with streaming)
 
 Goal: Serve one markdown essay per domain per UTC day. First request generates and caches; all later requests reuse it. Style is minimal, monospace, with automatic light/dark.
 
@@ -8,7 +8,7 @@ Architecture
 
 - Cloudflare Worker handles HTTP; edge cache (`caches.default`) 24h.
 - Durable Object `DomainDO` per hostname enforces single generation per day; stores `{text, generatedAt}` in one overwritten slot per cache version.
-- AI generation via Cloudflare AI Gateway (OpenAI-compatible) pointing to the pinned xAI `grok-4.20-0309-non-reasoning` model.
+- AI generation via Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI `grok-4.7` with `reasoning_effort: "low"` for both normal and streaming requests.
 - Rendering: raw markdown inside `<pre>` within minimal HTML; footer shows date and project link.
 - Streaming: optional `/stream` path streams the first uncached generation from the Durable Object; concurrent `/` or `/stream` misses wait on the same in-flight record.
 
@@ -33,7 +33,7 @@ Prompt (summary)
 
 - Host-aware, philosophical, 220–400 words, Markdown only.
 - H1 title; 2–3 H2 sections; at most one bullet list; italic one-line closing.
-- Temperature ~0.6, `max_tokens` ~500, English only, no images/HTML/links.
+- Temperature 0.6, `top_p: 0.9`, `max_tokens: 500`, English only, no images/HTML/links. A live Grok 4.7 Chat Completions probe accepted these parameters with low reasoning and returned a complete essay; reasoning tokens were reported separately in total usage.
 
 Failure mode
 

@@ -7,7 +7,7 @@ Minimal Cloudflare Worker that serves a single AI-generated markdown essay per h
 What it uses
 
 - Cloudflare Worker + Durable Object
-- Cloudflare AI Gateway (OpenAI-compatible) pointing to the pinned xAI `grok-4.20-0309-non-reasoning` model
+- Cloudflare AI Gateway (OpenAI-compatible) pointing to xAI `grok-4.7` with low reasoning effort
 - Edge cache 24h
 - Durable Object request coalescing so cold misses share one daily generation
 - Optional streaming path `/stream` to show the first generation live on cache miss
@@ -28,6 +28,7 @@ Behavior
 - One generation per host per UTC day; DO overwrites one `{text, generatedAt}` slot per cache version.
 - Edge cache keyed per host/version/day; headers: `ETag` = `host:version:date`, `X-Generated-On` = date.
 - Prompt: philosophical, host-aware, ~220–400 words, H1 + H2 sections, optional single bullet list, italic closing line.
+- Normal and streaming requests use `reasoning_effort: "low"`, `temperature: 0.6`, `top_p: 0.9`, and `max_tokens: 500`. Cloudflare's `/compat` model ID is `grok/grok-4.7`.
 - Fallback text is deterministic if the AI call fails, and is stored for that host/day.
 - Footer shows generation date and a right-aligned link “a @steipete project” → https://steipete.me.
 - Streaming: request `/stream` to stream the first uncached generation live through the Durable Object. Concurrent `/` or `/stream` misses wait on the same in-flight generation, so streaming cannot bypass the one-generation-per-day guard. Live responses are not edge-cached; the next normal request caches the completed DO record. Interrupted streams store deterministic fallback text, never partial output, as the daily record.

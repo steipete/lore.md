@@ -51,18 +51,18 @@ describe("gateway headers", () => {
 describe("xAI model routing", () => {
   it("adds the provider namespace for Cloudflare's unified API", () => {
     expect(resolveXaiModel("https://gateway.ai.cloudflare.com/v1/account/default/compat")).toBe(
-      "grok/grok-4.20-0309-non-reasoning",
+      "grok/grok-4.7",
     );
     expect(resolveXaiModel("https://gateway.ai.cloudflare.com/v1/account/default/compat/")).toBe(
-      "grok/grok-4.20-0309-non-reasoning",
+      "grok/grok-4.7",
     );
   });
 
   it("keeps the public model identifier for provider-native endpoints", () => {
     expect(resolveXaiModel("https://gateway.ai.cloudflare.com/v1/account/default/grok/v1")).toBe(
-      "grok-4.20-0309-non-reasoning",
+      "grok-4.7",
     );
-    expect(resolveXaiModel("https://api.x.ai/v1")).toBe("grok-4.20-0309-non-reasoning");
+    expect(resolveXaiModel("https://api.x.ai/v1")).toBe("grok-4.7");
   });
 });
 
@@ -112,6 +112,14 @@ describe("DomainDO daily generation", () => {
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
+      model: "grok/grok-4.7",
+      reasoning_effort: "low",
+      temperature: 0.6,
+      top_p: 0.9,
+      max_tokens: 500,
+      stream: false,
+    });
     expect(responses.map((response) => response.text)).toEqual(
       Array.from({ length: 5 }, () => "# One daily page"),
     );
@@ -184,6 +192,14 @@ describe("DomainDO daily generation", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(streamBody).toContain("# Live page");
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
+      model: "grok/grok-4.7",
+      reasoning_effort: "low",
+      temperature: 0.6,
+      top_p: 0.9,
+      max_tokens: 500,
+      stream: true,
+    });
     expect(streamResponse.headers.get("content-type")).toContain("text/html");
     expect(streamResponse.headers.get("x-generated-on")).toBe("2025-12-05");
     expect(dailyRecord.text).toBe("# Live page");
@@ -345,12 +361,12 @@ describe("DomainDO daily generation", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
     const previous = { text: "# Previous model page", generatedAt: "2025-12-05" };
-    const state = createState([["v16-daily", previous]]);
+    const state = createState([["v17-daily", previous]]);
     const domainDO = new DomainDO(state, { XAI_API_KEY: "xai-key" });
 
     const response = await domainDO.fetch(
       new Request("https://domain-do/daily", {
-        headers: { "x-md-host": "example.com", "x-md-version": "v17" },
+        headers: { "x-md-host": "example.com", "x-md-version": "v18" },
       }),
     );
 
@@ -360,8 +376,8 @@ describe("DomainDO daily generation", () => {
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect([...state.values.entries()]).toEqual([
-      ["v16-daily", previous],
-      ["v17-daily", { text: "# New model page", generatedAt: "2025-12-05" }],
+      ["v17-daily", previous],
+      ["v18-daily", { text: "# New model page", generatedAt: "2025-12-05" }],
     ]);
   });
 });
@@ -395,10 +411,10 @@ describe("worker fetch", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toContain("# Daily page");
     expect(doFetch).toHaveBeenCalledWith("https://domain-do/daily", {
-      headers: { "x-md-host": "example.com", "x-md-version": "v17" },
+      headers: { "x-md-host": "example.com", "x-md-version": "v18" },
     });
     expect(cache.put).toHaveBeenCalledTimes(1);
-    expect(response.headers.get("x-md-version")).toBe("v17");
+    expect(response.headers.get("x-md-version")).toBe("v18");
     expect(response.headers.get("x-generated-on")).toBe("2025-12-05");
   });
 
@@ -418,7 +434,7 @@ describe("worker fetch", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toContain("# Live page");
     expect(doFetch).toHaveBeenCalledWith("https://domain-do/stream", {
-      headers: { "x-md-host": "example.com", "x-md-version": "v17" },
+      headers: { "x-md-host": "example.com", "x-md-version": "v18" },
     });
     expect(cache.put).not.toHaveBeenCalled();
   });
