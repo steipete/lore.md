@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Refresh Vite, Vitest, Wrangler, and Workers types with their latest reviewed patch updates; retain Node 22.13 support and the dependency release-age policy.
+
 ## 0.4.0 — 2026-10-16
 
 **Highlights:** Daily essays now use Grok 4.7 with low reasoning effort and a fresh cache namespace.
