@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Refresh Wrangler, Workers types, and formatting/lint tooling after the dependency release-age gate, retaining Node 22.13 support and credential-free bundle validation.
+
 - Refresh Vite, Vitest, Wrangler, and Workers types with their latest reviewed patch updates; retain Node 22.13 support and the dependency release-age policy.
 
 ## 0.4.0 — 2026-10-16
