@@ -48,7 +48,7 @@ Config references
 - `wrangler.toml`: DO binding `DOMAIN_DO`, entrypoint, migration tag.
 - `docs/spec.md`: deeper architecture and ops notes.
 - CI: `.github/workflows/ci.yml` checks the minimum Node 22.13 runtime and the latest Node 22 release, audits dependencies, and validates the bundle with `wrangler deploy --dry-run`. CI does not require deployment or AI credentials.
-- Dependency maintenance: Dependabot checks npm dependencies weekly and groups patch/minor version updates. Keep Wrangler current to pick up Miniflare's pinned transitive security fixes; security updates remain eligible between scheduled version updates.
+- Dependency maintenance: Dependabot checks npm dependencies weekly and groups patch/minor version updates. Version updates use a two-day cooldown, enforced by pnpm as well. Keep Wrangler current to pick up Miniflare's pinned transitive security fixes; security updates remain eligible between scheduled version updates.
 
 ## Releases
 
